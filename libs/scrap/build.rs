@@ -158,6 +158,18 @@ fn generate_bindings(
         b = b.clang_arg(format!("-I{}", dir.display()));
     }
 
+    // Add MSVC system include paths for Windows builds
+    #[cfg(windows)]
+    {
+        if let Ok(include) = std::env::var("INCLUDE") {
+            for path in include.split(';') {
+                if !path.is_empty() {
+                    b = b.clang_arg(format!("-I{}", path));
+                }
+            }
+        }
+    }
+
     b.generate().unwrap().write_to_file(ffi_rs).unwrap();
     fs::copy(ffi_rs, exact_file).ok(); // ignore failure
 }
