@@ -1,11 +1,11 @@
 [package]
-name = "jobersdesk"
+name = "rustdesk"
 version = "1.0.0"
 authors = ["Jobers <info@jobers.es>"]
 edition = "2021"
 build= "build.rs"
 description = "JObersDesk Remote Desktop"
-default-run = "jobersdesk"
+default-run = "rustdesk"
 rust-version = "1.75"
 
 [lib]
