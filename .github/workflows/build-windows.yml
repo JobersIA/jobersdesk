@@ -122,8 +122,19 @@ jobs:
 
   build-android:
     needs: generate-bridge
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: false
+
       - name: Checkout source code
         uses: actions/checkout@v4
         with:
@@ -137,14 +148,21 @@ jobs:
       - name: Install prerequisites
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y clang cmake curl gcc git g++ libclang-dev llvm-dev nasm ninja-build pkg-config wget
+          sudo apt-get install -y clang cmake curl gcc-multilib git g++ g++-multilib libclang-dev llvm-dev nasm ninja-build pkg-config wget
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ env.RUST_VERSION }}
-          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+          targets: aarch64-linux-android
           components: "rustfmt"
+
+      - name: Setup NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r28c
+          add-to-path: true
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -158,26 +176,44 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: "stable"
 
-      - name: Setup vcpkg
+      - name: Setup vcpkg and install Android deps
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
           git clone https://github.com/microsoft/vcpkg.git /opt/vcpkg
           cd /opt/vcpkg
           git checkout 120deac3062162151622ca4860575a33844ba10b
           ./bootstrap-vcpkg.sh
           echo "VCPKG_ROOT=/opt/vcpkg" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> $GITHUB_ENV
-          echo "ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME" >> $GITHUB_ENV
+          export VCPKG_ROOT=/opt/vcpkg
+          cd $GITHUB_WORKSPACE
+          ./flutter/build_android_deps.sh arm64-v8a
+
+      - name: Build Rust library for Android
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: |
+          cargo install cargo-ndk --version 3.1.2 --locked
+          ./flutter/ndk_arm64.sh
+          mkdir -p ./flutter/android/app/src/main/jniLibs/arm64-v8a
+          cp ./target/aarch64-linux-android/release/liblibrustdesk.so ./flutter/android/app/src/main/jniLibs/arm64-v8a/librustdesk.so
+          cp $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so ./flutter/android/app/src/main/jniLibs/arm64-v8a/
 
       - name: Build Android APK
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
         run: |
-          export VCPKG_ROOT=/opt/vcpkg
+          # Use debug signing for now
+          sed -i "s/signingConfigs.release/signingConfigs.debug/g" ./flutter/android/app/build.gradle
           pushd flutter
           flutter pub get
-          flutter build apk --release
+          flutter build apk --release --target-platform android-arm64 --split-per-abi
           popd
 
       - name: Upload Android APK
         uses: actions/upload-artifact@master
         with:
           name: jobersdesk-android
-          path: flutter/build/app/outputs/flutter-apk/app-release.apk
+          path: flutter/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
