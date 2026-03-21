@@ -100,18 +100,15 @@ jobs:
 
       - name: Install vcpkg dependencies
         run: |
-          $VCPKG_ROOT/vcpkg install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static
-        shell: bash
+          vcpkg install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static
 
       - name: Build Rust library
-        run: |
-          python3 build.py --flutter --skip-portable-pack
-        shell: bash
+        run: python build.py --flutter --skip-portable-pack
 
-      - name: Copy librustdesk.dll
+      - name: Copy DLLs
         run: |
-          cp target/release/deps/dylib_virtual_display.dll flutter/build/windows/x64/runner/Release/
-          cp target/release/librustdesk.dll flutter/build/windows/x64/runner/Release/
+          copy target\release\deps\dylib_virtual_display.dll flutter\build\windows\x64\runner\Release\
+          copy target\release\librustdesk.dll flutter\build\windows\x64\runner\Release\
 
       - name: Upload Windows build
         uses: actions/upload-artifact@master
