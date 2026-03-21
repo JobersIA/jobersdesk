@@ -1,4 +1,4 @@
-name: Build JObersDesk Windows
+name: Build JObersDesk
 
 on:
   workflow_dispatch:
@@ -119,3 +119,65 @@ jobs:
         with:
           name: jobersdesk-windows
           path: flutter/build/windows/x64/runner/Release/
+
+  build-android:
+    needs: generate-bridge
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Restore bridge files
+        uses: actions/download-artifact@master
+        with:
+          name: bridge-artifact
+
+      - name: Install prerequisites
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y clang cmake curl gcc git g++ libclang-dev llvm-dev nasm ninja-build pkg-config wget
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android,i686-linux-android
+          components: "rustfmt"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2.12.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: "stable"
+
+      - name: Setup vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git /opt/vcpkg
+          cd /opt/vcpkg
+          git checkout 120deac3062162151622ca4860575a33844ba10b
+          ./bootstrap-vcpkg.sh
+          echo "VCPKG_ROOT=/opt/vcpkg" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_NDK_LATEST_HOME" >> $GITHUB_ENV
+
+      - name: Build Android APK
+        run: |
+          export VCPKG_ROOT=/opt/vcpkg
+          pushd flutter
+          flutter pub get
+          flutter build apk --release
+          popd
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@master
+        with:
+          name: jobersdesk-android
+          path: flutter/build/app/outputs/flutter-apk/app-release.apk
