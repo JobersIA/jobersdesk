@@ -50,6 +50,8 @@ jobs:
           ~/.cargo/bin/flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart
           # Apply workaround for ffigen
           sed -i "s/ffi.NativeFunction<ffi.Bool Function(DartPort/ffi.NativeFunction<ffi.Uint8 Function(DartPort/g" flutter/lib/generated_bridge.dart
+          # Regenerate freezed files
+          cd flutter && dart run build_runner build --delete-conflicting-outputs && cd ..
 
       - name: Upload bridge
         uses: actions/upload-artifact@master
