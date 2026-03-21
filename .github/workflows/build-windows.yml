@@ -59,6 +59,7 @@ jobs:
             flutter/lib/generated_bridge.dart
             flutter/lib/generated_bridge.freezed.dart
             src/bridge_generated.rs
+            src/bridge_generated.io.rs
 
   build-windows:
     needs: generate-bridge
