@@ -100,12 +100,11 @@ jobs:
 
       - name: Install vcpkg dependencies
         run: |
-          ${{ env.VCPKG_ROOT }}/vcpkg install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static
-        shell: bash
+          & "$env:VCPKG_ROOT\vcpkg" install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static
+        shell: pwsh
 
       - name: Build Rust library
         run: python build.py --flutter --skip-portable-pack
-        shell: bash
 
       - name: Copy DLLs
         run: |
