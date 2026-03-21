@@ -93,15 +93,15 @@ jobs:
           echo "LIBCLANG_PATH=C:\Program Files\LLVM\lib" >> $env:GITHUB_ENV
         shell: powershell
 
-      - name: Setup vcpkg with GitHub Actions cache
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: "120deac3062162151622ca4860575a33844ba10b"
-
-      - name: Install vcpkg dependencies
+      - name: Setup vcpkg and install dependencies
         run: |
-          "%VCPKG_ROOT%\vcpkg" install --x-install-root="%VCPKG_ROOT%\installed" --triplet=x64-windows-static
-        shell: cmd
+          git clone https://github.com/microsoft/vcpkg.git D:\vcpkg
+          cd D:\vcpkg
+          git checkout 120deac3062162151622ca4860575a33844ba10b
+          .\bootstrap-vcpkg.bat
+          echo "VCPKG_ROOT=D:\vcpkg" >> $env:GITHUB_ENV
+          .\vcpkg install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static
+        shell: pwsh
 
       - name: Build Rust library
         run: python build.py --flutter --skip-portable-pack
