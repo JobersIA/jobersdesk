@@ -3,10 +3,103 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-const String _kWorkerCodeKey = 'jobersdesk_worker_code';
+const String kWorkerCodeKey = 'jobersdesk_worker_code';
 const String _kWorkerNameKey = 'jobersdesk_worker_name';
 const String _kWorkerRoleKey = 'jobersdesk_worker_role';
 const String _kApiUrl = 'https://jobdesk.jobers.es/api/worker/validate';
+
+/// Comprueba si hay un trabajador identificado en este equipo.
+Future<bool> isWorkerIdentified() async {
+  final prefs = await SharedPreferences.getInstance();
+  final code = prefs.getString(kWorkerCodeKey);
+  return code != null && code.isNotEmpty;
+}
+
+/// Muestra un diálogo informando que se necesita identificación de trabajador.
+void showWorkerRequiredDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (ctx) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        width: 380,
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFff6b6b), Color(0xFFee5a24)],
+                ),
+                borderRadius: BorderRadius.circular(50),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFee5a24).withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.block, color: Colors.white, size: 36),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Conexión no permitida',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Para conectarte a otros equipos necesitas identificarte como trabajador de Jobers.\n\nPulsa el botón "Soy trabajador" e introduce tu código de identificación (ejemplo: F001).',
+              style: TextStyle(fontSize: 13, color: Colors.grey[600], height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.grey[500], size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Si no tienes código, solicítalo a tu administrador.',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF28a745),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Entendido', style: TextStyle(fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
 
 class WorkerBadge extends StatefulWidget {
   const WorkerBadge({Key? key}) : super(key: key);
@@ -30,7 +123,7 @@ class _WorkerBadgeState extends State<WorkerBadge> {
   Future<void> _loadSaved() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _code = prefs.getString(_kWorkerCodeKey);
+      _code = prefs.getString(kWorkerCodeKey);
       _name = prefs.getString(_kWorkerNameKey);
       _role = prefs.getString(_kWorkerRoleKey);
     });
@@ -38,7 +131,7 @@ class _WorkerBadgeState extends State<WorkerBadge> {
 
   Future<void> _saveClear() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kWorkerCodeKey);
+    await prefs.remove(kWorkerCodeKey);
     await prefs.remove(_kWorkerNameKey);
     await prefs.remove(_kWorkerRoleKey);
     setState(() {
@@ -61,7 +154,7 @@ class _WorkerBadgeState extends State<WorkerBadge> {
         if (data['ok'] == true) {
           final w = data['worker'];
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_kWorkerCodeKey, w['code']);
+          await prefs.setString(kWorkerCodeKey, w['code']);
           await prefs.setString(_kWorkerNameKey, w['name']);
           await prefs.setString(_kWorkerRoleKey, w['role']);
           setState(() {

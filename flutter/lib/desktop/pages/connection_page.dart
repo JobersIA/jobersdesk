@@ -6,6 +6,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hbb/common/widgets/connection_page_title.dart';
+import 'package:flutter_hbb/common/widgets/worker_badge.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/widgets/popup_menu.dart';
 import 'package:flutter_hbb/models/state_model.dart';
@@ -327,10 +328,16 @@ class _ConnectionPageState extends State<ConnectionPage>
 
   /// Callback for the connect button.
   /// Connects to the selected peer.
+  /// Requires worker identification.
   void onConnect(
       {bool isFileTransfer = false,
       bool isViewCamera = false,
-      bool isTerminal = false}) {
+      bool isTerminal = false}) async {
+    final isWorker = await isWorkerIdentified();
+    if (!isWorker) {
+      showWorkerRequiredDialog(context);
+      return;
+    }
     var id = _idController.id;
     connect(context, id,
         isFileTransfer: isFileTransfer,
