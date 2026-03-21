@@ -7,12 +7,36 @@ const String kWorkerCodeKey = 'jobersdesk_worker_code';
 const String _kWorkerNameKey = 'jobersdesk_worker_name';
 const String _kWorkerRoleKey = 'jobersdesk_worker_role';
 const String _kApiUrl = 'https://jobdesk.jobers.es/api/worker/validate';
+const String _kCheckTargetUrl = 'https://jobdesk.jobers.es/api/worker/check-target';
 
 /// Comprueba si hay un trabajador identificado en este equipo.
 Future<bool> isWorkerIdentified() async {
   final prefs = await SharedPreferences.getInstance();
   final code = prefs.getString(kWorkerCodeKey);
   return code != null && code.isNotEmpty;
+}
+
+/// Comprueba si un RustDesk ID pertenece a un trabajador.
+Future<bool> isTargetWorker(String rustdeskId) async {
+  try {
+    final resp = await http.post(
+      Uri.parse(_kCheckTargetUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'rustdesk_id': rustdeskId}),
+    ).timeout(const Duration(seconds: 5));
+    if (resp.statusCode == 200) {
+      final data = jsonDecode(resp.body);
+      return data['is_worker'] == true;
+    }
+  } catch (_) {}
+  return false;
+}
+
+/// Verifica si la conexión está permitida: el origen o el destino debe ser trabajador.
+Future<bool> isConnectionAllowed(String targetId) async {
+  if (await isWorkerIdentified()) return true;
+  if (await isTargetWorker(targetId)) return true;
+  return false;
 }
 
 /// Muestra un diálogo informando que se necesita identificación de trabajador.

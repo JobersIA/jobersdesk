@@ -328,17 +328,18 @@ class _ConnectionPageState extends State<ConnectionPage>
 
   /// Callback for the connect button.
   /// Connects to the selected peer.
-  /// Requires worker identification.
+  /// At least one side (origin or target) must be a worker.
   void onConnect(
       {bool isFileTransfer = false,
       bool isViewCamera = false,
       bool isTerminal = false}) async {
-    final isWorker = await isWorkerIdentified();
-    if (!isWorker) {
+    var id = _idController.id;
+    if (id.isEmpty) return;
+    final allowed = await isConnectionAllowed(id);
+    if (!allowed) {
       showWorkerRequiredDialog(context);
       return;
     }
-    var id = _idController.id;
     connect(context, id,
         isFileTransfer: isFileTransfer,
         isViewCamera: isViewCamera,
