@@ -88,9 +88,10 @@ jobs:
           channel: "stable"
 
       - name: Install LLVM and Clang
-        uses: nicholasgasior/gha-install-llvm-clang@v2.0.0
-        with:
-          llvm-version: "15.0.6"
+        run: |
+          choco install llvm --version=15.0.7 --allow-downgrade -y
+          echo "LIBCLANG_PATH=C:\Program Files\LLVM\lib" >> $env:GITHUB_ENV
+        shell: powershell
 
       - name: Setup vcpkg with GitHub Actions cache
         uses: lukka/run-vcpkg@v11
