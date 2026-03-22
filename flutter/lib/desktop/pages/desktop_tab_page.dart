@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hbb/common.dart';
+import 'package:flutter_hbb/common/widgets/worker_badge.dart';
 import 'package:flutter_hbb/consts.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_home_page.dart';
 import 'package:flutter_hbb/desktop/pages/desktop_setting_page.dart';
@@ -68,6 +69,7 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
   @override
   void initState() {
     super.initState();
+    WorkerIdentity.instance.load();
     // HardwareKeyboard.instance.addHandler(_handleKeyEvent);
   }
 
@@ -94,17 +96,24 @@ class _DesktopTabPageState extends State<DesktopTabPage> {
     final tabWidget = Container(
         child: Scaffold(
             backgroundColor: Theme.of(context).colorScheme.background,
-            body: DesktopTab(
-              controller: tabController,
-              tail: Offstage(
-                offstage: bind.isIncomingOnly() || bind.isDisableSettings(),
-                child: ActionIcon(
-                  message: 'Settings',
-                  icon: IconFont.menu,
-                  onTap: DesktopTabPage.onAddSetting,
-                  isClose: false,
+            body: Column(
+              children: [
+                const WorkerTopBanner(),
+                Expanded(
+                  child: DesktopTab(
+                    controller: tabController,
+                    tail: Offstage(
+                      offstage: bind.isIncomingOnly() || bind.isDisableSettings(),
+                      child: ActionIcon(
+                        message: 'Settings',
+                        icon: IconFont.menu,
+                        onTap: DesktopTabPage.onAddSetting,
+                        isClose: false,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             )));
     return isMacOS || kUseCompatibleUiMode
         ? tabWidget

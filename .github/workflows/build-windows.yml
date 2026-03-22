@@ -1,4 +1,4 @@
-name: Build JObersDesk
+name: Build JobDesk
 
 on:
   workflow_dispatch:
@@ -117,7 +117,7 @@ jobs:
       - name: Upload Windows build
         uses: actions/upload-artifact@master
         with:
-          name: jobersdesk-windows
+          name: jobdesk-windows
           path: flutter/build/windows/x64/runner/Release/
 
   build-android:
@@ -215,5 +215,5 @@ jobs:
       - name: Upload Android APK
         uses: actions/upload-artifact@master
         with:
-          name: jobersdesk-android
+          name: jobdesk-android
           path: flutter/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
