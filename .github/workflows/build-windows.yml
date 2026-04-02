@@ -251,8 +251,8 @@ jobs:
           "C:\Program Files (x86)\NSIS\makensis.exe" jobersdesk-setup.nsi
 
       - name: Generate portable ZIP
-        shell: powershell
-        run: Compress-Archive -Path "C:\Fuentes\JobDesk\build\*" -DestinationPath "C:\Fuentes\JobDesk\installer\JObersDesk-Portable.zip" -Force
+        shell: cmd
+        run: powershell -ExecutionPolicy Bypass -Command "Compress-Archive -Path 'C:\Fuentes\JobDesk\build\*' -DestinationPath 'C:\Fuentes\JobDesk\installer\JObersDesk-Portable.zip' -Force"
 
       - name: Sign installer
         shell: cmd
