@@ -217,3 +217,56 @@ jobs:
         with:
           name: jobdesk-android
           path: flutter/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+
+  sign-and-publish:
+    needs: [build-windows, build-android]
+    runs-on: [self-hosted, firma]
+    steps:
+      - name: Download Windows build
+        uses: actions/download-artifact@master
+        with:
+          name: jobdesk-windows
+          path: artifacts/jobdesk-windows
+
+      - name: Download Android APK
+        uses: actions/download-artifact@master
+        with:
+          name: jobdesk-android
+          path: artifacts/jobdesk-android
+
+      - name: Copy binaries to build dir
+        shell: cmd
+        run: |
+          xcopy /s /y /q "artifacts\jobdesk-windows\*.*" "C:\Fuentes\JobDesk\build\" >nul
+          copy /y "artifacts\jobdesk-android\app-arm64-v8a-release.apk" "C:\Fuentes\JobDesk\installer\JObersDesk-Android.apk" >nul
+
+      - name: Sign jobersdesk.exe
+        shell: cmd
+        run: powershell -ExecutionPolicy Bypass -File "C:\cmd\firmar_local.ps1" "C:\Fuentes\JobDesk\build\jobersdesk.exe"
+
+      - name: Generate NSIS installer
+        shell: cmd
+        run: |
+          cd /d "C:\Fuentes\JobDesk\installer"
+          "C:\Program Files (x86)\NSIS\makensis.exe" jobersdesk-setup.nsi
+
+      - name: Generate portable ZIP
+        shell: powershell
+        run: Compress-Archive -Path "C:\Fuentes\JobDesk\build\*" -DestinationPath "C:\Fuentes\JobDesk\installer\JObersDesk-Portable.zip" -Force
+
+      - name: Sign installer
+        shell: cmd
+        run: powershell -ExecutionPolicy Bypass -File "C:\cmd\firmar_local.ps1" "C:\Fuentes\JobDesk\installer\JObersDesk-Setup.exe"
+
+      - name: Sign APK
+        shell: cmd
+        run: call "C:\cmd\firmar_apk.cmd" "C:\Fuentes\JobDesk\installer\JObersDesk-Android.apk"
+
+      - name: Upload to VPS
+        shell: cmd
+        run: python -c "import paramiko; ssh=paramiko.SSHClient(); ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()); ssh.connect('51.68.44.136',username='ubuntu',password='Desa2012Job.'); sftp=ssh.open_sftp(); sftp.put(r'C:\Fuentes\JobDesk\installer\JObersDesk-Setup.exe','/home/ubuntu/jobdesk/panel-downloads/JObersDesk-Setup.exe'); sftp.put(r'C:\Fuentes\JobDesk\installer\JObersDesk-Portable.zip','/home/ubuntu/jobdesk/panel-downloads/JObersDesk-Portable.zip'); sftp.put(r'C:\Fuentes\JobDesk\installer\JObersDesk-Android.apk','/home/ubuntu/jobdesk/panel-downloads/JObersDesk-Android.apk'); sftp.close(); ssh.close(); print('Upload completed')"
+
+      - name: Cleanup artifacts
+        shell: cmd
+        if: always()
+        run: if exist artifacts rmdir /s /q artifacts
