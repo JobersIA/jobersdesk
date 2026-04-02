@@ -262,6 +262,10 @@ jobs:
         shell: cmd
         run: call "C:\cmd\firmar_apk.cmd" "C:\Fuentes\JobDesk\installer\JObersDesk-Android.apk"
 
+      - name: Install paramiko
+        shell: cmd
+        run: pip install paramiko
+
       - name: Upload to VPS
         shell: cmd
         run: python -c "import paramiko; ssh=paramiko.SSHClient(); ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()); ssh.connect('51.68.44.136',username='ubuntu',password='Desa2012Job.'); sftp=ssh.open_sftp(); sftp.put(r'C:\Fuentes\JobDesk\installer\JObersDesk-Setup.exe','/home/ubuntu/jobdesk/panel-downloads/JObersDesk-Setup.exe'); sftp.put(r'C:\Fuentes\JobDesk\installer\JObersDesk-Portable.zip','/home/ubuntu/jobdesk/panel-downloads/JObersDesk-Portable.zip'); sftp.put(r'C:\Fuentes\JobDesk\installer\JObersDesk-Android.apk','/home/ubuntu/jobdesk/panel-downloads/JObersDesk-Android.apk'); sftp.close(); ssh.close(); print('Upload completed')"
